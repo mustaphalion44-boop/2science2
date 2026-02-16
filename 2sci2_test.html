@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2SCI2 · visual answer detector + live web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #d9e3ed 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .portal {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 3rem 3rem 2rem 2rem;
+            box-shadow: 0 25px 40px -10px rgba(0,20,40,0.25),
+                        inset 0 0 0 1px rgba(255,255,255,0.6);
+            overflow: hidden;
+            padding: 2rem 2rem 2.5rem 2rem;
+        }
+        /* live web link bar */
+        .web-link-bar {
+            background: #2a3f54;
+            border-radius: 60px;
+            padding: 0.7rem 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #6c8fb0;
+        }
+        .web-link-bar span {
+            color: #b3e0ff;
+            font-weight: 500;
+        }
+        .live-link {
+            background: #4c9aff;
+            color: white;
+            padding: 0.4rem 1.5rem;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid white;
+        }
+        .live-link:hover {
+            background: #6aadff;
+        }
+        /* attendance bar */
+        .attendance-bar {
+            background: #1e2b3c;
+            border-radius: 100px;
+            padding: 0.9rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.15);
+            border: 1px solid #ffffff50;
+        }
+        .attendance-bar label {
+            color: #e0f0ff;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .name-area {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+        #studentName {
+            background: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 60px;
+            width: 260px;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: 2px solid transparent;
+            transition: 0.2s;
+            box-shadow: inset 0 2px 5px #00000010;
+        }
+        #studentName:focus {
+            outline: 2px solid #ffb347;
+        }
+        .name-btn {
+            background: #ffb347;
+            border: none;
+            border-radius: 60px;
+            padding: 0.8rem 2.2rem;
+            font-weight: 700;
+            color: #1e2b3c;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 4px 0 #a05e15;
+            letter-spacing: 0.7px;
+        }
+        .name-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        .greeting {
+            color: #c6dfff;
+            font-weight: 500;
+            font-size: 1.1rem;
+            background: #253c54;
+            padding: 0.4rem 1.4rem;
+            border-radius: 40px;
+        }
+        /* subject grid */
+        .subjects {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .subject-card {
+            background: #ffffffd9;
+            backdrop-filter: blur(5px);
+            border-radius: 2rem;
+            padding: 1.5rem 1rem 1.2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s ease;
+            border: 2px solid white;
+            box-shadow: 0 8px 12px #00000010;
+        }
+        .subject-card.active-subject {
+            border: 4px solid #1e2b3c;
+            background: #fff7e5;
+            transform: scale(1.02);
+            box-shadow: 0 20px 25px -8px #1e2b3c40;
+        }
+        .subject-card h3 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .math { color: #0f5e9c; }
+        .physics { color: #b14e5c; }
+        .chemistry { color: #2f7a5c; }
+        .addmath { color: #9b6b43; }
+        .subject-icon {
+            font-size: 2.8rem;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+        .topic-tag {
+            font-size: 0.85rem;
+            background: #e9ecf0;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #1e2b3c;
+        }
+        /* test container */
+        .test-panel {
+            background: #fbfdff;
+            border-radius: 2.5rem;
+            padding: 2rem 2rem 2rem 2rem;
+            box-shadow: inset 0 2px 8px #ffffff, 0 15px 30px #0000001a;
+            border: 1px solid #ffffff;
+        }
+        .active-test-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px dashed #a0b8cf;
+            padding-bottom: 0.8rem;
+            margin-bottom: 1.8rem;
+            flex-wrap: wrap;
+        }
+        .active-test-header h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(130deg, #1e2b3c, #3a4f68);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .student-badge {
+            background: #cbd5e6;
+            border-radius: 60px;
+            padding: 0.5rem 1.7rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #14222e;
+        }
+        /* questions container with scroll */
+        .questions-scroll {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            margin-bottom: 1.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: #1e2b3c #d9e3ed;
+        }
+        .questions-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .questions-scroll::-webkit-scrollbar-track {
+            background: #d9e3ed;
+            border-radius: 10px;
+        }
+        .questions-scroll::-webkit-scrollbar-thumb {
+            background: #1e2b3c;
+            border-radius: 10px;
+        }
+        .question {
+            background: #f2f6fc;
+            border-radius: 1.8rem;
+            padding: 1.3rem 1.8rem;
+            margin-bottom: 1.2rem;
+            border-left: 10px solid #cccccc;
+            transition: 0.1s;
+            position: relative;
+        }
+        .question.correct-answer {
+            border-left: 10px solid #2ecc71;
+            background: #f0fff4;
+        }
+        .question.wrong-answer {
+            border-left: 10px solid #e74c3c;
+            background: #fff0f0;
+        }
+        .question p {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #142f44;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .theory-badge {
+            background: #4a6a8a;
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+            display: inline-block;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+        }
+        .answer-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-left: auto;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+        .correct-icon {
+            color: #27ae60;
+            background: #d5f5e3;
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+        }
+        .wrong-icon {
+            color: #c0392b;
+            background: #fadbd8;
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem 3rem;
+            align-items: center;
+        }
+        .options label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 1.15rem;
+            background: white;
+            padding: 0.3rem 1.2rem 0.3rem 0.8rem;
+            border-radius: 40px;
+            box-shadow: 0 2px 6px #0000000c;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .options label.selected-correct {
+            background: #2ecc71;
+            color: white;
+            box-shadow: 0 2px 10px #2ecc7180;
+        }
+        .options label.selected-wrong {
+            background: #e74c3c;
+            color: white;
+            box-shadow: 0 2px 10px #e74c3c80;
+        }
+        input[type="radio"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: #1e2b3c;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 1rem;
+        }
+        .btn {
+            background: white;
+            border: 2px solid #1e2b3c;
+            color: #1e2b3c;
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 3px 0 #8f9eb0;
+        }
+        .btn.primary {
+            background: #1e2b3c;
+            color: white;
+            box-shadow: 0 3px 0 #0b121b;
+        }
+        .btn.verify-btn {
+            background: #9b59b6;
+            border-color: #6c3483;
+            color: white;
+            box-shadow: 0 3px 0 #4a235a;
+        }
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .result-box {
+            background: #dee9f2;
+            border-radius: 60px;
+            padding: 0.8rem 2rem;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        .detector-status {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: #1e2b3c1a;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+        }
+        .green-dot { width: 12px; height: 12px; background: #2ecc71; border-radius: 50%; display: inline-block; }
+        .red-dot { width: 12px; height: 12px; background: #e74c3c; border-radius: 50%; display: inline-block; }
+        .footer-note {
+            text-align: right;
+            color: #3f526b;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+        @media (max-width: 900px) {
+            .subjects { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 550px) {
+            .attendance-bar { flex-direction: column; align-items: stretch; gap: 1rem; }
+            .name-area { justify-content: center; }
+            .web-link-bar { flex-direction: column; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="portal">
+    <!-- LIVE WEB LINK - makes it available online -->
+    <div class="web-link-bar">
+        <span>🌐 LIVE ON WEB · anyone can access via link</span>
+        <a href="https://htmlpreview.github.io/?https://github.com/yourusername/yourrepo/blob/main/2sci2-test-portal.html" 
+           class="live-link" target="_blank">
+            🔗 OPEN LIVE VERSION <small>(GitHub preview)</small>
+        </a>
+    </div>
+
+    <!-- attendance space -->
+    <div class="attendance-bar">
+        <label>
+            <span style="font-size:1.8rem;">📋</span> ATTENDANCE
+        </label>
+        <div class="name-area">
+            <input type="text" id="studentName" placeholder="e.g., Amira Bensalem" value="Mathias" autocomplete="off">
+            <button class="name-btn" id="enterNameBtn">ENTER & ATTEND</button>
+        </div>
+        <div class="greeting" id="greetingDisplay">👤 current: Mathias</div>
+    </div>
+
+    <!-- subject cards with topic tags -->
+    <div class="subjects">
+        <div class="subject-card" data-subject="math" id="sub-math">
+            <span class="subject-icon math">🧮</span>
+            <h3 class="math">MATHEMATICS</h3>
+            <div class="topic-tag">percentages · mapping · simultaneous eq</div>
+        </div>
+        <div class="subject-card" data-subject="physics" id="sub-physics">
+            <span class="subject-icon physics">⚛️</span>
+            <h3 class="physics">PHYSICS</h3>
+            <div class="topic-tag">density · dimensional analysis · pressure</div>
+        </div>
+        <div class="subject-card" data-subject="chemistry" id="sub-chemistry">
+            <span class="subject-icon chemistry">🧪</span>
+            <h3 class="chemistry">CHEMISTRY</h3>
+            <div class="topic-tag">atomic theory · enthalpy · periodicity</div>
+        </div>
+        <div class="subject-card" data-subject="addmath" id="sub-addmath">
+            <span class="subject-icon addmath">📈</span>
+            <h3 class="addmath">ADD MATH</h3>
+            <div class="topic-tag">polynomial · surds · partial fractions</div>
+        </div>
+    </div>
+
+    <!-- test area with scrollable questions & visual detector -->
+    <div class="test-panel" id="testPanel">
+        <div class="active-test-header">
+            <h2 id="subjectTitle">Mathematics</h2>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div class="detector-status">
+                    <span><span class="green-dot"></span> correct</span>
+                    <span><span class="red-dot"></span> wrong</span>
+                </div>
+                <div class="student-badge" id="activeStudent">Mathias</div>
+            </div>
+        </div>
+
+        <div class="questions-scroll" id="questionsContainer">
+            <!-- javascript will inject 20 questions per subject -->
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn" id="clearTestBtn">🔄 clear answers</button>
+            <button class="btn verify-btn" id="verifyAnswersBtn">🔍 verify answers (show red/green)</button>
+            <button class="btn primary" id="submitTestBtn">✔️ submit test (score)</button>
+            <div class="result-box" id="scoreDisplay">score: --</div>
+        </div>
+        <div class="progress-info" id="progressInfo">20 objective questions · visual correct/wrong detector</div>
+        <div class="footer-note">2SCI2 · instant feedback: ✅ green = correct, ❌ red = wrong</div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ----- ATTENDANCE -----
+    const studentNameInput = document.getElementById('studentName');
+    const enterNameBtn = document.getElementById('enterNameBtn');
+    const greetingDisplay = document.getElementById('greetingDisplay');
+    const activeStudentSpan = document.getElementById('activeStudent');
+    let currentStudent = "Mathias";
+    greetingDisplay.innerText = `👤 current: ${currentStudent}`;
+    activeStudentSpan.innerText = currentStudent;
+
+    function updateStudentName() {
+        let newName = studentNameInput.value.trim();
+        if (newName === "") newName = "Guest";
+        currentStudent = newName;
+        greetingDisplay.innerText = `👤 current: ${currentStudent}`;
+        activeStudentSpan.innerText = currentStudent;
+    }
+    enterNameBtn.addEventListener('click', updateStudentName);
+    studentNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') updateStudentName();
+    });
+
+    // ----- EXTENDED OBJECTIVE TEST BANK (20 each, theory heavy) -----
+    const questionBank = {
+        math: [
+            // percentages (1-5)
+            { q: "What is 25% of 240?", o: ["60", "50", "70", "80"], c: 0, topic: "percentages" },
+            { q: "If a shirt costs $40 and is on 15% discount, what is the sale price?", o: ["$34", "$32", "$36", "$30"], c: 0, topic: "percentages" },
+            { q: "Express 3/5 as a percentage.", o: ["60%", "30%", "75%", "50%"], c: 0, topic: "percentages" },
+            { q: "A number increased by 20% becomes 60. Find the original number.", o: ["50", "48", "55", "52"], c: 0, topic: "percentages" },
+            { q: "What percentage of 80 is 20?", o: ["25%", "20%", "30%", "40%"], c: 0, topic: "percentages" },
+            // mapping (6-10)
+            { q: "In a function f: x → 2x+1, what is the image of 3?", o: ["7", "6", "5", "8"], c: 0, topic: "mapping" },
+            { q: "If f(x)=x²-3, find f(4).", o: ["13", "16", "19", "12"], c: 0, topic: "mapping" },
+            { q: "Which mapping is one-to-one?", o: ["f(x)=x³", "f(x)=x²", "f(x)=4", "f(x)=±√x"], c: 0, topic: "mapping" },
+            { q: "Domain of f(x)=1/(x-2) is all reals except?", o: ["2", "-2", "0", "1"], c: 0, topic: "mapping" },
+            { q: "If f(x)=3x-1 and g(x)=x+2, find fg(2).", o: ["11", "10", "12", "9"], c: 0, topic: "mapping" },
+            // simultaneous equations (11-15)
+            { q: "Solve: x+y=10, x-y=4", o: ["(7,3)", "(6,4)", "(8,2)", "(5,5)"], c: 0, topic: "simultaneous" },
+            { q: "Solve: 2x+3y=12, x-y=1", o: ["(3,2)", "(2,3)", "(4,1)", "(1,4)"], c: 0, topic: "simultaneous" },
+            { q: "If 3x+2y=13 and 2x+3y=12, find x+y.", o: ["5", "6", "7", "4"], c: 0, topic: "simultaneous" },
+            { q: "Solve for x: y=2x+1, 3x+2y=17", o: ["3", "2", "4", "5"], c: 0, topic: "simultaneous" },
+            { q: "The sum of two numbers is 15, difference is 3. Find the smaller.", o: ["6", "9", "5", "7"], c: 0, topic: "simultaneous" },
+            // mixed theory (16-20)
+            { q: "What is the gradient of line y=4x-3?", o: ["4", "-3", "3", "-4"], c: 0, topic: "theory" },
+            { q: "Simplify 3(2x-4) + 5x", o: ["11x-12", "6x-12+5x", "11x+12", "6x-7"], c: 0, topic: "theory" },
+            { q: "Factorize x²-9", o: ["(x-3)(x+3)", "(x-3)²", "(x+3)²", "(x-9)(x+1)"], c: 0, topic: "theory" },
+            { q: "Solve 5x-2=3x+8", o: ["5", "4", "6", "3"], c: 0, topic: "theory" },
+            { q: "If a=3, b=-2, find 2a-3b", o: ["12", "0", "6", "9"], c: 0, topic: "theory" }
+        ],
+        physics: [
+            // density (1-5)
+            { q: "Formula for density?", o: ["mass/volume", "volume/mass", "mass×volume", "mass+volume"], c: 0, topic: "density" },
+            { q: "Unit of density in SI?", o: ["kg/m³", "g/cm³", "kg/L", "all are valid"], c: 3, topic: "density" },
+            { q: "If mass=10kg, volume=2m³, density=?", o: ["5 kg/m³", "20 kg/m³", "0.2 kg/m³", "8 kg/m³"], c: 0, topic: "density" },
+            { q: "Which has higher density: iron or wood?", o: ["iron", "wood", "same", "depends"], c: 0, topic: "density" },
+            { q: "Density of water at 4°C approx?", o: ["1000 kg/m³", "1 g/cm³", "both a and b", "800 kg/m³"], c: 2, topic: "density" },
+            // dimensional analysis (6-10)
+            { q: "Dimension of force (F=ma)?", o: ["MLT⁻²", "MLT⁻¹", "ML²T⁻²", "M⁻¹LT²"], c: 0, topic: "dimensional" },
+            { q: "Which is dimensionally correct for pressure?", o: ["ML⁻¹T⁻²", "MLT⁻²", "ML²T⁻²", "M⁻¹L⁻¹T²"], c: 0, topic: "dimensional" },
+            { q: "Dimension of velocity?", o: ["LT⁻¹", "LT⁻²", "L²T⁻¹", "L⁻¹T"], c: 0, topic: "dimensional" },
+            { q: "Energy has same dimension as?", o: ["work", "power", "force", "momentum"], c: 0, topic: "dimensional" },
+            { q: "Dimensionless quantity?", o: ["strain", "stress", "pressure", "density"], c: 0, topic: "dimensional" },
+            // pressure (11-15)
+            { q: "Pressure = ?", o: ["force/area", "area/force", "force×area", "mass/area"], c: 0, topic: "pressure" },
+            { q: "SI unit of pressure?", o: ["Pascal", "Newton", "Joule", "Watt"], c: 0, topic: "pressure" },
+            { q: "Atmospheric pressure at sea level approx?", o: ["101325 Pa", "100 Pa", "1000 Pa", "101 Pa"], c: 0, topic: "pressure" },
+            { q: "Pressure in liquids increases with?", o: ["depth", "area", "volume", "temperature only"], c: 0, topic: "pressure" },
+            { q: "1 atm = ? cm Hg", o: ["76", "100", "1", "760"], c: 0, topic: "pressure" },
+            // more theory (16-20)
+            { q: "Archimedes' principle relates to?", o: ["buoyancy", "pressure", "density", "velocity"], c: 0, topic: "theory" },
+            { q: "Bernoulli's equation applies to?", o: ["fluid flow", "solid mechanics", "thermodynamics", "optics"], c: 0, topic: "theory" },
+            { q: "Hooke's law relates to?", o: ["spring force", "pressure", "density", "velocity"], c: 0, topic: "theory" },
+            { q: "Which is a vector?", o: ["velocity", "speed", "mass", "time"], c: 0, topic: "theory" },
+            { q: "Which is scalar?", o: ["temperature", "force", "displacement", "acceleration"], c: 0, topic: "theory" }
+        ],
+        chemistry: [
+            // atomic theory (1-5)
+            { q: "Who proposed atomic theory?", o: ["Dalton", "Rutherford", "Bohr", "Thomson"], c: 0, topic: "atomic theory" },
+            { q: "Subatomic particle with positive charge?", o: ["proton", "electron", "neutron", "positron"], c: 0, topic: "atomic theory" },
+            { q: "Mass number = ?", o: ["protons+neutrons", "protons+electrons", "neutrons", "protons"], c: 0, topic: "atomic theory" },
+            { q: "Isotopes have same number of?", o: ["protons", "neutrons", "nucleons", "electrons only"], c: 0, topic: "atomic theory" },
+            { q: "Which model introduced planetary orbits?", o: ["Bohr", "Dalton", "Rutherford", "Quantum"], c: 0, topic: "atomic theory" },
+            // enthalpy change (6-10)
+            { q: "Enthalpy symbol?", o: ["H", "E", "U", "G"], c: 0, topic: "enthalpy" },
+            { q: "Exothermic reaction ΔH ?", o: ["negative", "positive", "zero", "constant"], c: 0, topic: "enthalpy" },
+            { q: "Standard enthalpy of formation of O₂(g)?", o: ["0", ">0", "<0", "not defined"], c: 0, topic: "enthalpy" },
+            { q: "Bond breaking is?", o: ["endothermic", "exothermic", "isothermic", "adiabatic"], c: 0, topic: "enthalpy" },
+            { q: "Hess's law relates to?", o: ["enthalpy change", "entropy", "free energy", "temperature"], c: 0, topic: "enthalpy" },
+            // periodicity (11-15)
+            { q: "Most electronegative element?", o: ["fluorine", "oxygen", "chlorine", "nitrogen"], c: 0, topic: "periodicity" },
+            { q: "Atomic radius increases?", o: ["down group", "across period", "up group", "no trend"], c: 0, topic: "periodicity" },
+            { q: "Noble gases are in group?", o: ["18", "17", "1", "2"], c: 0, topic: "periodicity" },
+            { q: "Which is alkali metal?", o: ["sodium", "calcium", "aluminum", "magnesium"], c: 0, topic: "periodicity" },
+            { q: "Ionization energy across period?", o: ["increases", "decreases", "constant", "varies randomly"], c: 0, topic: "periodicity" },
+            // more theory (16-20)
+            { q: "pH of acid is ?", o: ["<7", ">7", "=7", "≥7"], c: 0, topic: "theory" },
+            { q: "Catalyst effect on reaction?", o: ["lowers activation energy", "increases ΔH", "changes product", "no effect"], c: 0, topic: "theory" },
+            { q: "Oxidation is?", o: ["loss of electrons", "gain of electrons", "gain of oxygen", "loss of hydrogen"], c: 0, topic: "theory" },
+            { q: "Reducing agent?", o: ["donates electrons", "accepts electrons", "oxidizes", "precipitates"], c: 0, topic: "theory" },
+            { q: "Organic compound containing -OH group?", o: ["alcohol", "alkane", "alkene", "alkyne"], c: 0, topic: "theory" }
+        ],
+        addmath: [
+            // polynomial functions (1-5)
+            { q: "Degree of polynomial 3x⁴+2x²-5?", o: ["4", "3", "2", "1"], c: 0, topic: "polynomial" },
+            { q: "If P(x)=x³-3x+2, find P(2).", o: ["4", "2", "0", "6"], c: 0, topic: "polynomial" },
+            { q: "Factor theorem: (x-a) is factor if?", o: ["P(a)=0", "P(0)=a", "P'(a)=0", "P(a)=1"], c: 0, topic: "polynomial" },
+            { q: "Remainder when x³-2x²+3 divided by (x-1)?", o: ["2", "1", "0", "3"], c: 0, topic: "polynomial" },
+            { q: "Quadratic polynomial max degree?", o: ["2", "1", "3", "0"], c: 0, topic: "polynomial" },
+            // surds (6-10)
+            { q: "Simplify √18", o: ["3√2", "2√3", "9√2", "√9·2"], c: 0, topic: "surds" },
+            { q: "Rationalize 1/√3", o: ["√3/3", "√3", "1/3√3", "3/√3"], c: 0, topic: "surds" },
+            { q: "Expand (√2+1)(√2-1)", o: ["1", "2", "3", "√2"], c: 0, topic: "surds" },
+            { q: "√12 + √27 = ?", o: ["5√3", "√39", "6√3", "3√5"], c: 0, topic: "surds" },
+            { q: "Conjugate of 3+√5", o: ["3-√5", "-3+√5", "-3-√5", "√5-3"], c: 0, topic: "surds" },
+            // partial fractions (11-15)
+            { q: "Partial fraction of 1/(x(x+1)) form?", o: ["A/x + B/(x+1)", "A/(x+1) + B/x", "A/x + B/x²", "A/(x(x+1))"], c: 0, topic: "partial fractions" },
+            { q: "For linear factor (x-a) we use?", o: ["A/(x-a)", "A/(x-a)²", "Ax+B/(x-a)", "A"], c: 0, topic: "partial fractions" },
+            { q: "Decompose 2x/(x²-1)", o: ["1/(x-1)+1/(x+1)", "1/(x-1)-1/(x+1)", "2/(x-1)-2/(x+1)", "none"], c: 0, topic: "partial fractions" },
+            { q: "Repeated factor (x-1)² gives terms?", o: ["A/(x-1)+B/(x-1)²", "A/(x-1)²", "A/(x-1)", "Ax+B/(x-1)²"], c: 0, topic: "partial fractions" },
+            { q: "Partial fraction is used for?", o: ["integrating rational functions", "differentiating", "solving quadratics", "matrix inversion"], c: 0, topic: "partial fractions" },
+            // more theory (16-20)
+            { q: "Binomial expansion (1+x)ⁿ first term?", o: ["1", "nx", "n(n-1)x²/2", "xⁿ"], c: 0, topic: "theory" },
+            { q: "Log₂8 = ?", o: ["3", "2", "4", "1"], c: 0, topic: "theory" },
+            { q: "Differentiate x⁵", o: ["5x⁴", "4x⁵", "5x⁵", "x⁴"], c: 0, topic: "theory" },
+            { q: "∫ 3x² dx", o: ["x³+C", "x²+C", "3x³/3+C", "6x+C"], c: 0, topic: "theory" },
+            { q: "tanθ = ?", o: ["sinθ/cosθ", "cosθ/sinθ", "1/cosθ", "1/sinθ"], c: 0, topic: "theory" }
+        ]
+    };
+
+    // ----- state -----
+    let currentSubject = "math";
+    let userAnswers = {
+        math: new Array(20).fill(null),
+        physics: new Array(20).fill(null),
+        chemistry: new Array(20).fill(null),
+        addmath: new Array(20).fill(null)
+    };
+
+    // ----- DOM elements -----
+    const subjectCards = document.querySelectorAll('.subject-card');
+    const subjectTitle = document.getElementById('subjectTitle');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const clearBtn = document.getElementById('clearTestBtn');
+    const verifyBtn = document.getElementById('verifyAnswersBtn');
+    const submitBtn = document.getElementById('submitTestBtn');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const progressInfo = document.getElementById('progressInfo');
+
+    function setActiveSubject(subject) {
+        subjectCards.forEach(card => {
+            card.classList.toggle('active-subject', card.dataset.subject === subject);
+        });
+    }
+
+    // Visual answer detector - applies red/green highlighting
+    function applyVisualDetection() {
+        const questions = questionBank[currentSubject];
+        const answers = userAnswers[currentSubject];
+        
+        questions.forEach((q, idx) => {
+            const questionDiv = document.querySelector(`.question[data-qidx="${idx}"]`);
+            if (!questionDiv) return;
+            
+            // Remove existing classes
+            questionDiv.classList.remove('correct-answer', 'wrong-answer');
+            
+            const selected = answers[idx];
+            if (selected !== null) {
+                if (selected === q.c) {
+                    questionDiv.classList.add('correct-answer');
+                } else {
+                    questionDiv.classList.add('wrong-answer');
+                }
+            }
+            
+            // Also highlight the selected option label
+            const radios = document.querySelectorAll(`input[name="q${idx}"]`);
+            radios.forEach((radio, optIdx) => {
+                const label = radio.closest('label');
+                if (label) {
+                    label.classList.remove('selected-correct', 'selected-wrong');
+                    if (radio.checked) {
+                        if (optIdx === q.c) {
+                            label.classList.add('selected-correct');
+                        } else {
+                            label.classList.add('selected-wrong');
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function renderQuestions() {
+        const questions = questionBank[currentSubject];
+        const answers = userAnswers[currentSubject];
+        let html = '';
+        questions.forEach((q, idx) => {
+            const selectedIdx = answers[idx];
+            const topicTag = q.topic ? `<span class="theory-badge">${q.topic}</span>` : '';
+            
+            // Determine if we should show indicator
+            let indicatorHtml = '';
+            if (selectedIdx !== null) {
+                if (selectedIdx === q.c) {
+                    indicatorHtml = `<span class="answer-indicator correct-icon">✅ correct</span>`;
+                } else {
+                    indicatorHtml = `<span class="answer-indicator wrong-icon">❌ wrong</span>`;
+                }
+            }
+            
+            const optionsHtml = q.o.map((opt, optIdx) => {
+                const checked = (selectedIdx === optIdx) ? 'checked' : '';
+                // Additional class for label if selected
+                let labelClass = '';
+                if (selectedIdx === optIdx) {
+                    labelClass = (optIdx === q.c) ? 'selected-correct' : 'selected-wrong';
+                }
+                return `<label class="${labelClass}"><input type="radio" name="q${idx}" value="${optIdx}" ${checked}> ${opt}</label>`;
+            }).join('');
+            
+            // Determine question border class based on answer
+            let questionClass = 'question';
+            if (selectedIdx !== null) {
+                questionClass += (selectedIdx === q.c) ? ' correct-answer' : ' wrong-answer';
+            }
+            
+            html += `
+                <div class="${questionClass}" data-qidx="${idx}">
+                    <p>${idx+1}. ${q.q} ${topicTag} ${indicatorHtml}</p>
+                    <div class="options">${optionsHtml}</div>
+                </div>
+            `;
+        });
+        questionsContainer.innerHTML = html;
+
+        // attach listeners
+        questions.forEach((_, idx) => {
+            document.querySelectorAll(`input[name="q${idx}"]`).forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const val = parseInt(e.target.value, 10);
+                    userAnswers[currentSubject][idx] = val;
+                    
+                    // Immediately update visual feedback for this question
+                    const questionDiv = document.querySelector(`.question[data-qidx="${idx}"]`);
+                    const indicatorSpan = questionDiv?.querySelector('.answer-indicator');
+                    
+                    // Update classes
+                    if (questionDiv) {
+                        questionDiv.classList.remove('correct-answer', 'wrong-answer');
+                        if (val === questions[idx].c) {
+                            questionDiv.classList.add('correct-answer');
+                            if (indicatorSpan) {
+                                indicatorSpan.className = 'answer-indicator correct-icon';
+                                indicatorSpan.innerText = '✅ correct';
+                            }
+                        } else {
+                            questionDiv.classList.add('wrong-answer');
+                            if (indicatorSpan) {
+                                indicatorSpan.className = 'answer-indicator wrong-icon';
+                                indicatorSpan.innerText = '❌ wrong';
+                            }
+                        }
+                    }
+                    
+                    // Update label highlighting
+                    const labels = document.querySelectorAll(`input[name="q${idx}"]`).forEach(r => {
+                        const lbl = r.closest('label');
+                        if (lbl) {
+                            lbl.classList.remove('selected-correct', 'selected-wrong');
+                            if (r.checked) {
+                                if (parseInt(r.value, 10) === questions[idx].c) {
+                                    lbl.classList.add('selected-correct');
+                                } else {
+                                    lbl.classList.add('selected-wrong');
+                                }
+                            }
+                        }
+                    });
+                });
+            });
+        });
+
+        const subjectNames = {
+            math: 'MATHEMATICS', physics: 'PHYSICS', chemistry: 'CHEMISTRY', addmath: 'ADDITIONAL MATHEMATICS'
+        };
+        subjectTitle.innerText = subjectNames[currentSubject];
+        activeStudentSpan.innerText = currentStudent;
+        progressInfo.innerText = `20 objective questions · visual correct/wrong detector`;
+    }
+
+    function switchSubject(subject) {
+        if (subject === currentSubject) return;
+        currentSubject = subject;
+        setActiveSubject(subject);
+        renderQuestions();
+        scoreDisplay.innerText = 'score: --';
+    }
+
+    subjectCards.forEach(card => {
+        card.addEventListener('click', () => switchSubject(card.dataset.subject));
+    });
+
+    clearBtn.addEventListener('click', () => {
+        userAnswers[currentSubject] = new Array(20).fill(null);
+        renderQuestions();
+        scoreDisplay.innerText = 'score: --';
+    });
+
+    verifyBtn.addEventListener('click', () => {
+        applyVisualDetection();
+        // Also show small message
+        scoreDisplay.innerText = 'checking... (red/green)';
+        setTimeout(() => {
+            const answered = userAnswers[currentSubject].filter(a => a !== null).length;
+            scoreDisplay.innerText = `answers: ${answered}/20`;
+        }, 500);
+    });
+
+    submitBtn.addEventListener('click', () => {
+        const questions = questionBank[currentSubject];
+        const answers = userAnswers[currentSubject];
+        let correct = 0;
+        questions.forEach((q, idx) => {
+            if (answers[idx] !== null && answers[idx] === q.c) correct++;
+        });
+        scoreDisplay.innerText = `score: ${correct}/${questions.length}`;
+        
+        // Also apply visual detection when submitting
+        applyVisualDetection();
+    });
+
+    // initial render
+    setActiveSubject('math');
+    renderQuestions();
+
+    // update student badge on name change
+    function refreshBadge() {
+        activeStudentSpan.innerText = currentStudent;
+        greetingDisplay.innerText = `👤 current: ${currentStudent}`;
+    }
+    enterNameBtn.addEventListener('click', () => { updateStudentName(); refreshBadge(); });
+    studentNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { updateStudentName(); refreshBadge(); }
+    });
+
+    // For live web link - make it dynamic (current page URL)
+    const liveLink = document.querySelector('.live-link');
+    if (liveLink) {
+        // Update link to a generic HTML preview (this will work if hosted on GitHub)
+        liveLink.href = 'https://htmlpreview.github.io/?https://github.com/yourusername/yourrepo/blob/main/2sci2-test-portal.html';
+        // Or we can set it to current page if hosted
+        liveLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('To make this live:\n1. Upload this HTML to GitHub\n2. Use https://htmlpreview.github.io/ to view it\n\nOr you can use any static hosting (Netlify, Vercel)');
+        });
+    }
+})();
+</script>
+</body>
+</html>
